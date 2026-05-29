@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Comment Picker | Lucky Draw</title>
+    <title>YouTube Comment Picker | SkillCourse</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
@@ -14,6 +14,7 @@
             --primary-hover: #2563eb;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
+            --accent: #a78bfa;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
@@ -28,6 +29,7 @@
             padding: 2rem 1rem;
             background-image: radial-gradient(circle at top right, #1e1b4b, transparent 40%),
                               radial-gradient(circle at bottom left, #0f172a, transparent 40%);
+            overflow-x: hidden;
         }
 
         .container {
@@ -37,76 +39,120 @@
             backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
             border-radius: 16px;
-            padding: 2rem;
+            padding: 2.5rem;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: filter 0.5s ease;
         }
 
         h1 {
             text-align: center;
             margin-bottom: 2rem;
-            font-size: 2rem;
+            font-size: 2.2rem;
             background: linear-gradient(to right, #60a5fa, #a78bfa);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            animation: fadeInDown 0.8s ease-out;
         }
 
-        .form-group { margin-bottom: 1.5rem; }
+        .form-group { margin-bottom: 1.5rem; animation: fadeIn 1s ease-out; }
         label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-muted); }
         input, select {
             width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--glass-border);
-            background: rgba(15, 23, 42, 0.6); color: var(--text-main); outline: none; transition: border-color 0.2s;
+            background: rgba(15, 23, 42, 0.6); color: var(--text-main); outline: none; transition: all 0.3s ease;
         }
-        input:focus, select:focus { border-color: var(--primary); }
+        input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(167, 139, 250, 0.3); }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
-        button {
-            width: 100%; padding: 1rem; background: var(--primary); color: white; border: none;
-            border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
+        button.primary-btn {
+            width: 100%; padding: 1.2rem; background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold;
+            cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            margin-top: 1rem;
         }
-        button:hover { background: var(--primary-hover); }
-        button:active { transform: scale(0.98); }
-        button:disabled { background: #475569; cursor: not-allowed; transform: none; }
+        button.primary-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(167, 139, 250, 0.6); }
+        button.primary-btn:active { transform: translateY(1px); }
 
-        /* UI States */
-        #loading-state, #reveal-state, #winners-state {
-            display: none; text-align: center; margin-top: 2rem; padding: 2rem; border-top: 1px solid var(--glass-border);
+        /* Custom Branding Footer */
+        .branding-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            animation: fadeIn 1.2s ease-out;
         }
-
-        .spinner {
-            width: 40px; height: 40px; border: 4px solid var(--glass-border);
-            border-top: 4px solid var(--primary); border-radius: 50%;
-            animation: spin 1s linear infinite; margin: 0 auto 1rem auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .reveal-btn {
-            background: linear-gradient(to right, #8b5cf6, #3b82f6); font-size: 1.5rem; padding: 1.5rem;
-            border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5); animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(139, 92, 246, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
-        }
-
-        .winners-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
-        .winner-card {
-            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 12px;
-            padding: 1.5rem; text-align: left; animation: slideUp 0.5s ease-out;
-        }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        .winner-card img { width: 50px; height: 50px; border-radius: 50%; margin-bottom: 1rem; }
-        .winner-card .username { font-weight: bold; font-size: 1.2rem; color: #a78bfa; }
-        .winner-card .comment-text { margin: 1rem 0; font-size: 0.95rem; line-height: 1.4; }
-        .winner-card .date { font-size: 0.8rem; color: var(--text-muted); }
-        .status-text { color: var(--text-muted); font-size: 0.9rem; margin-top: 10px; }
+        .creator-photo {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 10px rgba(167, 139, 250, 0.3);
+        }
+
+        .company-logo {
+            height: 30px;
+            object-fit: contain;
+        }
+
+        .creator-name { font-weight: bold; color: var(--text-main); }
+        .company-name { font-weight: bold; color: #60a5fa; letter-spacing: 0.5px; }
+
+        /* Full Page Overlay */
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px);
+            z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+        }
+        #overlay.active { opacity: 1; pointer-events: all; }
+        .overlay-state { display: none; text-align: center; width: 100%; max-width: 900px; padding: 1rem; }
+        .overlay-state.active { display: block; animation: zoomIn 0.5s ease-out; }
+
+        /* Spinner & Animations */
+        .loader-container { position: relative; width: 100px; height: 100px; margin: 0 auto 2rem auto; }
+        .spinner { width: 100%; height: 100%; border: 4px solid rgba(255, 255, 255, 0.1); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite; }
+        .pulse-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--primary); animation: pulseOut 1.5s infinite ease-out; }
+        #overlay h2 { font-size: 2.5rem; margin-bottom: 1rem; animation: breathe 2s infinite; }
+        .status-text { color: var(--accent); font-size: 1.2rem; letter-spacing: 2px; text-transform: uppercase; }
+
+        .reveal-btn { background: linear-gradient(45deg, #f59e0b, #ef4444, #8b5cf6, #3b82f6); background-size: 300% 300%; font-size: 2rem; padding: 2rem 4rem; border-radius: 50px; color: white; border: none; cursor: pointer; font-weight: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: gradientShift 4s ease infinite, floatButton 3s ease-in-out infinite; transition: transform 0.2s; }
+        .reveal-btn:hover { transform: scale(1.05); } .reveal-btn:active { transform: scale(0.95); }
+
+        .winners-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; margin-top: 2rem; max-height: 70vh; overflow-y: auto; padding: 1rem; }
+        .winner-card { background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 2rem; text-align: center; width: 280px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); backdrop-filter: blur(10px); opacity: 0; transform: scale(0.8) translateY(30px); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .winner-card.show { opacity: 1; transform: scale(1) translateY(0); }
+        .winner-card:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 20px 40px rgba(167, 139, 250, 0.4); border-color: var(--accent); }
+        .winner-card img { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--accent); margin-bottom: 1rem; box-shadow: 0 0 15px rgba(167, 139, 250, 0.5); }
+        .winner-card .badge { display: inline-block; background: var(--accent); color: white; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 1rem; }
+        .winner-card .username { font-weight: bold; font-size: 1.4rem; color: #fff; margin-bottom: 0.5rem; }
+        .winner-card .comment-text { margin: 1rem 0; font-size: 1rem; line-height: 1.5; color: #cbd5e1; font-style: italic; }
+        
+        .close-btn { position: absolute; top: 2rem; right: 2rem; background: transparent; border: 2px solid white; color: white; border-radius: 50%; width: 40px; height: 40px; font-size: 1.5rem; cursor: pointer; transition: all 0.3s; display: none; }
+        .close-btn:hover { background: white; color: black; transform: rotate(90deg); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes pulseOut { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+        @keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes floatButton { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); } ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="container" id="main-container">
         <h1>YouTube Comment Picker</h1>
         
         <div class="form-group">
@@ -141,20 +187,36 @@
             </select>
         </div>
 
-        <button id="search-btn" onclick="startSearch()">Search Winners</button>
+        <button class="primary-btn" onclick="startSearch()">Search Winners</button>
 
-        <div id="loading-state">
-            <div class="spinner"></div>
-            <h3>Finding lucky winners...</h3>
-            <div id="loading-progress" class="status-text">Fetching comments securely...</div>
+        <div class="branding-footer">
+            <span>Made with <span style="color: #ef4444;">♥</span> by</span>
+            <img src="roshan.jpeg" alt="Roshan Tuniya" class="creator-photo" onerror="this.style.display='none'">
+            <span class="creator-name">Roshan Tuniya</span>
+            <span>for</span>
+            <img src="logo.png" alt="SkillCourse Logo" class="company-logo" onerror="this.style.display='none'">
+            <span class="company-name">SkillCourse</span>
+        </div>
+    </div>
+
+    <div id="overlay">
+        <button class="close-btn" id="close-overlay" onclick="closeOverlay()">✕</button>
+
+        <div id="loading-state" class="overlay-state">
+            <div class="loader-container">
+                <div class="pulse-ring"></div>
+                <div class="spinner"></div>
+            </div>
+            <h2>Scanning Database...</h2>
+            <div id="loading-progress" class="status-text">Connecting to YouTube API...</div>
         </div>
 
-        <div id="reveal-state">
-            <button class="reveal-btn" onclick="revealWinners()">🎉 Tap to Reveal Winners! 🎉</button>
+        <div id="reveal-state" class="overlay-state">
+            <button class="reveal-btn" onclick="revealWinners()">✨ REVEAL WINNERS ✨</button>
         </div>
 
-        <div id="winners-state">
-            <h2>Congratulations!</h2>
+        <div id="winners-state" class="overlay-state">
+            <h2 style="font-size: 3rem; color: #fff; text-shadow: 0 0 20px #a78bfa;">🎉 Congratulations! 🎉</h2>
             <div id="winners-container" class="winners-grid"></div>
         </div>
     </div>
@@ -174,8 +236,8 @@
         }
 
         async function fetchAllComments(videoId) {
-            if (API_KEY === 'YOUR_API_KEY_HERE') {
-                throw new Error("You forgot to add your API Key to the code! Please edit the index.html file.");
+            if (API_KEY === 'AIzaSyCa7yRgp3rZDgV3BNissgvv6OAG40MN-qw') {
+                throw new Error("API Key missing! Please edit the HTML file and insert your Google API key.");
             }
 
             let comments = [];
@@ -197,7 +259,7 @@
                 comments = comments.concat(data.items);
                 nextPageToken = data.nextPageToken || '';
                 
-                progressText.innerText = `Scraped ${comments.length} comments so far...`;
+                progressText.innerText = `Analyzing ${comments.length} comments...`;
 
             } while (nextPageToken);
 
@@ -220,17 +282,27 @@
             });
         }
 
+        function switchOverlayState(stateId) {
+            document.querySelectorAll('.overlay-state').forEach(el => el.classList.remove('active'));
+            if(stateId) document.getElementById(stateId).classList.add('active');
+        }
+
+        function closeOverlay() {
+            document.getElementById('overlay').classList.remove('active');
+            document.getElementById('main-container').style.filter = 'none';
+        }
+
         async function startSearch() {
             const urlInput = document.getElementById('video-url').value;
             const videoId = extractVideoId(urlInput);
             
             if (!videoId) { alert("Please paste a valid YouTube video link."); return; }
 
-            document.getElementById('search-btn').disabled = true;
-            document.getElementById('reveal-state').style.display = 'none';
-            document.getElementById('winners-state').style.display = 'none';
-            document.getElementById('loading-state').style.display = 'block';
-            document.getElementById('loading-progress').innerText = "Connecting to YouTube API...";
+            // Trigger Overlay Blur
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('main-container').style.filter = 'blur(10px) brightness(0.5)';
+            document.getElementById('close-overlay').style.display = 'none';
+            switchOverlayState('loading-state');
 
             try {
                 const rawComments = await fetchAllComments(videoId);
@@ -242,21 +314,18 @@
 
                 const eligibleComments = filterComments(rawComments, startDate, endDate, keywords);
                 
-                // Deduplicate commenters
+                // Deduplicate
                 const uniqueAuthors = new Map();
                 eligibleComments.forEach(c => {
                     const authorId = c.snippet.topLevelComment.snippet.authorChannelId.value;
-                    if (!uniqueAuthors.has(authorId)) {
-                        uniqueAuthors.set(authorId, c);
-                    }
+                    if (!uniqueAuthors.has(authorId)) { uniqueAuthors.set(authorId, c); }
                 });
                 
                 const finalPool = Array.from(uniqueAuthors.values());
 
                 if (finalPool.length === 0) throw new Error("No comments matched your filters.");
-                if (finalPool.length < winnerCount) {
-                    alert(`Only found ${finalPool.length} unique eligible commenter(s). Drawing as many as possible!`);
-                }
+                
+                document.getElementById('loading-progress').innerText = `Filtering winners from ${finalPool.length} entries...`;
 
                 // Random Shuffle
                 for (let i = finalPool.length - 1; i > 0; i--) {
@@ -266,25 +335,29 @@
 
                 finalWinners = finalPool.slice(0, winnerCount);
 
+                // Artificial delay for maximum suspense
                 setTimeout(() => {
-                    document.getElementById('loading-state').style.display = 'none';
-                    document.getElementById('reveal-state').style.display = 'block';
-                    document.getElementById('search-btn').disabled = false;
-                }, 1000); 
+                    switchOverlayState('reveal-state');
+                    document.getElementById('close-overlay').style.display = 'block';
+                }, 1500); 
 
             } catch (error) {
                 alert(error.message);
-                document.getElementById('loading-state').style.display = 'none';
-                document.getElementById('search-btn').disabled = false;
+                closeOverlay();
             }
         }
 
         function revealWinners() {
-            document.getElementById('reveal-state').style.display = 'none';
-            document.getElementById('winners-state').style.display = 'block';
+            switchOverlayState('winners-state');
             
-            // Trigger Confetti
-            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#3b82f6', '#a78bfa', '#ffffff'] });
+            // Blast Confetti multiple times
+            const duration = 3000;
+            const end = Date.now() + duration;
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#a78bfa', '#3b82f6'] });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#f59e0b', '#ef4444'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
 
             const container = document.getElementById('winners-container');
             container.innerHTML = ''; 
@@ -293,18 +366,19 @@
                 const snippet = winner.snippet.topLevelComment.snippet;
                 const card = document.createElement('div');
                 card.className = 'winner-card';
-                card.style.animationDelay = `${index * 0.2}s`;
                 
                 card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="color: var(--text-muted)">Winner #${index + 1}</span>
-                    </div>
+                    <div class="badge">WINNER #${index + 1}</div>
                     <img src="${snippet.authorProfileImageUrl}" alt="Profile">
                     <div class="username">${snippet.authorDisplayName}</div>
-                    <div class="comment-text">${snippet.textDisplay}</div>
-                    <div class="date">${new Date(snippet.publishedAt).toLocaleDateString()}</div>
+                    <div class="comment-text">"${snippet.textDisplay}"</div>
                 `;
                 container.appendChild(card);
+                
+                // Staggered pop-in animation
+                setTimeout(() => {
+                    card.classList.add('show');
+                }, index * 300); // 300ms delay between each card appearing
             });
         }
     </script>
