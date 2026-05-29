@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free YouTube Comment Picker | Lucky Draw</title>
+    <!-- Confetti Library for the reveal effect -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            background-image: radial-gradient(circle at top right, #1e1b4b, transparent 40%),
+                              radial-gradient(circle at bottom left, #0f172a, transparent 40%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            background: rgba(15, 23, 42, 0.6);
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        button:hover { background: var(--primary-hover); }
+        button:active { transform: scale(0.98); }
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* UI States */
+        #loading-state, #reveal-state, #winners-state {
+            display: none;
+            text-align: center;
+            margin-top: 2rem;
+            padding: 2rem;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--glass-border);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem auto;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .reveal-btn {
+            background: linear-gradient(to right, #8b5cf6, #3b82f6);
+            font-size: 1.5rem;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(139, 92, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+        }
+
+        .winners-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .winner-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: left;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .winner-card img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-bottom: 1rem;
+        }
+        
+        .winner-card .username { font-weight: bold; font-size: 1.2rem; color: #a78bfa; }
+        .winner-card .comment-text { margin: 1rem 0; font-size: 0.95rem; line-height: 1.4; }
+        .winner-card .date { font-size: 0.8rem; color: var(--text-muted); }
+        
+        .status-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>YouTube Comment Picker</h1>
+        
+        <div class="form-group">
+            <label for="video-url">YouTube Video Share Link *</label>
+            <input type="text" id="video-url" placeholder="e.g., https://youtu.be/..." required>
+        </div>
+
+        <div class="form-group grid-2">
+            <div>
+                <label for="start-date">From Date (Optional)</label>
+                <input type="date" id="start-date">
+            </div>
+            <div>
+                <label for="end-date">To Date (Optional)</label>
+                <input type="date" id="end-date">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="keywords">Keyword Filter (Optional, comma separated)</label>
+            <input type="text" id="keywords" placeholder="e.g., giveaway, awesome">
+        </div>
+
+        <div class="form-group">
+            <label for="winner-count">Number of Winners *</label>
+            <select id="winner-count">
+                <option value="1">1 Winner</option>
+                <option value="2">2 Winners</option>
+                <option value="3">3 Winners</option>
+                <option value="5">5 Winners</option>
+                <option value="10">10 Winners</option>
+            </select>
+        </div>
+
+        <button id="search-btn" onclick="startSearch()">Search Winners</button>
+
+        <!-- Loading State -->
+        <div id="loading-state">
+            <div class="spinner"></div>
+            <h3>Finding lucky winners...</h3>
+            <div id="loading-progress" class="status-text">Connecting to YouTube...</div>
+        </div>
+
+        <!-- Reveal State -->
+        <div id="reveal-state">
+            <button class="reveal-btn" onclick="revealWinners()">🎉 Tap to Reveal Winners! 🎉</button>
+        </div>
+
+        <!-- Winners State -->
+        <div id="winners-state">
+            <h2>Congratulations!</h2>
+            <div id="winners-container" class="winners-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // Utilizing a free, community-hosted YouTube API proxy. No API key required!
+        const API_URL = 'https://yt.lemnoslife.com/noKey/commentThreads';
+        let finalWinners = [];
+
+        // Advanced Regex to easily grab the video ID from standard URLs or short "Share" links
+        function extractVideoId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        async function fetchAllComments(videoId) {
+            let comments = [];
+            let nextPageToken = '';
+            let pageCount = 0;
+            const progressText = document.getElementById('loading-progress');
+            
+            // Loop through pagination to get comments
+            do {
+                const url = `${API_URL}?part=snippet&videoId=${videoId}&maxResults=100&pageToken=${nextPageToken}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error("Could not fetch comments. Make sure the video is public and comments are enabled.");
+                }
+
+                const data = await response.json();
+                
+                if (!data.items || data.items.length === 0) {
+                    break;
+                }
+
+                comments = comments.concat(data.items);
+                nextPageToken = data.nextPageToken || '';
+                pageCount++;
+                
+                progressText.innerText = `Scraped ${comments.length} comments so far...`;
+
+                // Hard cap at 20 pages (2,000 comments) to prevent the free proxy from rate-limiting us
+                if (pageCount >= 20) {
+                    console.warn("Reached maximum free proxy limit. Stopping at 2000 comments.");
+                    break; 
+                }
+
+            } while (nextPageToken);
+
+            return comments;
+        }
+
+        function filterComments(comments, startDate, endDate, keywords) {
+            return comments.filter(item => {
+                const snippet = item.snippet.topLevelComment.snippet;
+                const commentDate = new Date(snippet.publishedAt);
+                const text = snippet.textDisplay.toLowerCase();
+
+                // Date filtering
+                if (startDate && commentDate < new Date(startDate)) return false;
+                if (endDate && commentDate > new Date(endDate)) return false;
+
+                // Keyword filtering
+                if (keywords.length > 0) {
+                    const hasKeyword = keywords.some(kw => text.includes(kw.trim().toLowerCase()));
+                    if (!hasKeyword) return false;
+                }
+
+                return true;
+            });
+        }
+
+        async function startSearch() {
+            const urlInput = document.getElementById('video-url').value;
+            const videoId = extractVideoId(urlInput);
+            
+            if (!videoId) {
+                alert("Please paste a valid YouTube video link (e.g., https://youtu.be/...)");
+                return;
+            }
+
+            // UI Updates
+            document.getElementById('search-btn').disabled = true;
+            document.getElementById('reveal-state').style.display = 'none';
+            document.getElementById('winners-state').style.display = 'none';
+            document.getElementById('loading-state').style.display = 'block';
+            document.getElementById('loading-progress').innerText = "Connecting to YouTube...";
+
+            try {
+                const rawComments = await fetchAllComments(videoId);
+                
+                const startDate = document.getElementById('start-date').value;
+                const endDate = document.getElementById('end-date').value;
+                const keywordInput = document.getElementById('keywords').value;
+                const keywords = keywordInput ? keywordInput.split(',').filter(k => k.trim() !== "") : [];
+                const winnerCount = parseInt(document.getElementById('winner-count').value);
+
+                // Filter & Deduplicate by AuthorChannelId
+                const eligibleComments = filterComments(rawComments, startDate, endDate, keywords);
+                
+                const uniqueAuthors = new Map();
+                eligibleComments.forEach(c => {
+                    const authorId = c.snippet.topLevelComment.snippet.authorChannelId.value;
+                    if (!uniqueAuthors.has(authorId)) {
+                        uniqueAuthors.set(authorId, c);
+                    }
+                });
+                
+                const finalPool = Array.from(uniqueAuthors.values());
+
+                if (finalPool.length === 0) {
+                    throw new Error("No comments matched your filters.");
+                }
+
+                if (finalPool.length < winnerCount) {
+                    alert(`Only found ${finalPool.length} unique eligible commenter(s). We will draw as many as possible!`);
+                }
+
+                // Random Selection (Fisher-Yates Shuffle algorithm for true randomness)
+                for (let i = finalPool.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [finalPool[i], finalPool[j]] = [finalPool[j], finalPool[i]];
+                }
+
+                finalWinners = finalPool.slice(0, winnerCount);
+
+                // Transition to Reveal State
+                setTimeout(() => {
+                    document.getElementById('loading-state').style.display = 'none';
+                    document.getElementById('reveal-state').style.display = 'block';
+                    document.getElementById('search-btn').disabled = false;
+                }, 1000); 
+
+            } catch (error) {
+                alert(error.message);
+                document.getElementById('loading-state').style.display = 'none';
+                document.getElementById('search-btn').disabled = false;
+            }
+        }
+
+        function revealWinners() {
+            document.getElementById('reveal-state').style.display = 'none';
+            document.getElementById('winners-state').style.display = 'block';
+            
+            // Trigger Confetti Effect
+            confetti({
+                particleCount: 150,
+                spread: 80,
+                origin: { y: 0.6 },
+                colors: ['#3b82f6', '#a78bfa', '#ffffff']
+            });
+
+            const container = document.getElementById('winners-container');
+            container.innerHTML = ''; 
+
+            finalWinners.forEach((winner, index) => {
+                const snippet = winner.snippet.topLevelComment.snippet;
+                const card = document.createElement('div');
+                card.className = 'winner-card';
+                card.style.animationDelay = `${index * 0.2}s`;
+                
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted)">Winner #${index + 1}</span>
+                    </div>
+                    <img src="${snippet.authorProfileImageUrl}" alt="Profile">
+                    <div class="username">${snippet.authorDisplayName}</div>
+                    <div class="comment-text">${snippet.textDisplay}</div>
+                    <div class="date">${new Date(snippet.publishedAt).toLocaleDateString()}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>
