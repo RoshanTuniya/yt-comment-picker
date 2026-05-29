@@ -238,4 +238,75 @@
                 const endDate = document.getElementById('end-date').value;
                 const keywordInput = document.getElementById('keywords').value;
                 const keywords = keywordInput ? keywordInput.split(',').filter(k => k.trim() !== "") : [];
-                const winnerCount = parseInt(document.getElementById('winner-
+                const winnerCount = parseInt(document.getElementById('winner-count').value);
+
+                const eligibleComments = filterComments(rawComments, startDate, endDate, keywords);
+                
+                // Deduplicate commenters
+                const uniqueAuthors = new Map();
+                eligibleComments.forEach(c => {
+                    const authorId = c.snippet.topLevelComment.snippet.authorChannelId.value;
+                    if (!uniqueAuthors.has(authorId)) {
+                        uniqueAuthors.set(authorId, c);
+                    }
+                });
+                
+                const finalPool = Array.from(uniqueAuthors.values());
+
+                if (finalPool.length === 0) throw new Error("No comments matched your filters.");
+                if (finalPool.length < winnerCount) {
+                    alert(`Only found ${finalPool.length} unique eligible commenter(s). Drawing as many as possible!`);
+                }
+
+                // Random Shuffle
+                for (let i = finalPool.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [finalPool[i], finalPool[j]] = [finalPool[j], finalPool[i]];
+                }
+
+                finalWinners = finalPool.slice(0, winnerCount);
+
+                setTimeout(() => {
+                    document.getElementById('loading-state').style.display = 'none';
+                    document.getElementById('reveal-state').style.display = 'block';
+                    document.getElementById('search-btn').disabled = false;
+                }, 1000); 
+
+            } catch (error) {
+                alert(error.message);
+                document.getElementById('loading-state').style.display = 'none';
+                document.getElementById('search-btn').disabled = false;
+            }
+        }
+
+        function revealWinners() {
+            document.getElementById('reveal-state').style.display = 'none';
+            document.getElementById('winners-state').style.display = 'block';
+            
+            // Trigger Confetti
+            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#3b82f6', '#a78bfa', '#ffffff'] });
+
+            const container = document.getElementById('winners-container');
+            container.innerHTML = ''; 
+
+            finalWinners.forEach((winner, index) => {
+                const snippet = winner.snippet.topLevelComment.snippet;
+                const card = document.createElement('div');
+                card.className = 'winner-card';
+                card.style.animationDelay = `${index * 0.2}s`;
+                
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted)">Winner #${index + 1}</span>
+                    </div>
+                    <img src="${snippet.authorProfileImageUrl}" alt="Profile">
+                    <div class="username">${snippet.authorDisplayName}</div>
+                    <div class="comment-text">${snippet.textDisplay}</div>
+                    <div class="date">${new Date(snippet.publishedAt).toLocaleDateString()}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>
