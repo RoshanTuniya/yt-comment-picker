@@ -223,9 +223,10 @@
 
     <script>
         // ==========================================
-        // ⚠️ PASTE YOUR GOOGLE API KEY BELOW
+        // ⚠️ API KEYS & WEBHOOKS
         // ==========================================
         const API_KEY = 'AIzaSyCa7yRgp3rZDgV3BNissgvv6OAG40MN-qw'; 
+        const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx7nLqMHqbzRsBq8Z0wKy6lJvxbN0lA9f9-DwJCffMJtkZ6W_fbIaKwFbEp1kiYdkSX/exec';
         
         let finalWinners = [];
 
@@ -236,7 +237,7 @@
         }
 
         async function fetchAllComments(videoId) {
-            if (API_KEY === 'Your API Key') {
+            if (API_KEY === 'YOUR_API_KEY_HERE') {
                 throw new Error("API Key missing! Please edit the HTML file and insert your Google API key.");
             }
 
@@ -379,6 +380,37 @@
                 setTimeout(() => {
                     card.classList.add('show');
                 }, index * 300); // 300ms delay between each card appearing
+            });
+
+            // --- NEW LOGGING FEATURE ---
+            const urlInput = document.getElementById('video-url').value;
+            const keywords = document.getElementById('keywords').value || "None";
+            const today = new Date();
+            
+            finalWinners.forEach((winner) => {
+                const snippet = winner.snippet.topLevelComment.snippet;
+                
+                // Prepare the data payload
+                const logData = {
+                    date: today.toLocaleDateString(),
+                    time: today.toLocaleTimeString(),
+                    videoLink: urlInput,
+                    filters: keywords,
+                    winnerName: snippet.authorDisplayName,
+                    comment: snippet.textDisplay
+                };
+
+                // Send to Google Sheets silently in the background
+                if (GOOGLE_SHEET_WEB_APP_URL !== 'PASTE_YOUR_WEB_APP_URL_HERE') {
+                    fetch(GOOGLE_SHEET_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors', // Bypasses strict CORS rules for simple logging
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(logData)
+                    }).catch(err => console.error("Logging failed:", err));
+                }
             });
         }
     </script>
